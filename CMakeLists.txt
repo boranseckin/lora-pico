@@ -1,3 +1,19 @@
+# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
+if(WIN32)
+    set(USERHOME $ENV{USERPROFILE})
+else()
+    set(USERHOME $ENV{HOME})
+endif()
+set(sdkVersion 2.0.0)
+set(toolchainVersion 13_2_Rel1)
+set(picotoolVersion 2.0.0)
+set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+if (EXISTS ${picoVscode})
+    include(${picoVscode})
+endif()
+# ====================================================================================
+set(PICO_BOARD pico CACHE STRING "Board type")
+
 cmake_minimum_required(VERSION 3.12)
 
 # initialize pico_sdk from GIT
@@ -65,7 +81,9 @@ target_sources(pico_loramac_node INTERFACE
     ${LORAMAC_NODE_PATH}/src/peripherals/soft-se/soft-se-hal.c
     ${LORAMAC_NODE_PATH}/src/peripherals/soft-se/soft-se.c
 
-    ${LORAMAC_NODE_PATH}/src/radio/sx1276/sx1276.c
+    # ${LORAMAC_NODE_PATH}/src/radio/sx1276/sx1276.c
+    ${LORAMAC_NODE_PATH}/src/radio/sx126x/sx126x.c
+    ${LORAMAC_NODE_PATH}/src/radio/sx126x/radio.c
 
     ${LORAMAC_NODE_PATH}/src/system/delay.c
     ${LORAMAC_NODE_PATH}/src/system/gpio.c
@@ -79,7 +97,8 @@ target_sources(pico_loramac_node INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/boards/rp2040/gpio-board.c
     ${CMAKE_CURRENT_LIST_DIR}/src/boards/rp2040/rtc-board.c
     ${CMAKE_CURRENT_LIST_DIR}/src/boards/rp2040/spi-board.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/boards/rp2040/sx1276-board.c
+    # ${CMAKE_CURRENT_LIST_DIR}/src/boards/rp2040/sx1276-board.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/boards/rp2040/sx126x-board.c
 )
 
 target_include_directories(pico_loramac_node INTERFACE
@@ -120,7 +139,7 @@ target_include_directories(pico_lorawan INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/include
 )
 
-target_link_libraries(pico_lorawan INTERFACE pico_loramac_node)
+target_link_libraries(pico_lorawan INTERFACE pico_loramac_node pico_stdlib)
 
 add_subdirectory("examples/default_dev_eui")
 add_subdirectory("examples/erase_nvm")
