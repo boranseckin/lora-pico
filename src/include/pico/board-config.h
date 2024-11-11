@@ -34,27 +34,26 @@
 #define __BOARD_CONFIG_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*!
  * Defines the time required for the TCXO to wakeup [ms].
  */
-#define BOARD_TCXO_WAKEUP_TIME                      5
+#define BOARD_TCXO_WAKEUP_TIME 5
 
 /*!
  * Board MCU pins definitions
  */
-#define RADIO_RESET                                 15
+#define RADIO_RESET 9
 
-#define RADIO_MOSI                                  11
-#define RADIO_MISO                                  12
-#define RADIO_SCLK                                  10
+#define RADIO_MOSI PICO_DEFAULT_SPI_TX_PIN
+#define RADIO_MISO PICO_DEFAULT_SPI_RX_PIN
+#define RADIO_SCLK PICO_DEFAULT_SPI_SCK_PIN
 
-#define RADIO_NSS                                   3
-#define RADIO_BUSY                                  2
-#define RADIO_DIO_1                                 20
+#define RADIO_NSS 8
+#define RADIO_BUSY 11
+#define RADIO_DIO_1 10
 
 // #define RADIO_ANT_SWITCH_POWER                      22
 

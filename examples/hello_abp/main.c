@@ -17,15 +17,19 @@
 #include "pico/stdlib.h"
 #include "tusb.h"
 
+#include "board-config.h"
+
 // edit with LoRaWAN Node Region and ABP settings
 #include "config.h"
 
-// pin configuration for SX1276 radio module
-const struct lorawan_sx126x_settings sx126x_settings = {
-    .spi = {.inst = 0, .mosi = 25, .miso = 21, .sck = 24, .nss = 8},
-    .reset = 9,
-    // .dio0 = 7,
-    .dio1 = 10};
+// pin configuration for SX1262 radio module
+const struct lorawan_sx126x_settings sx126x_settings = {.spi = {.inst = spi0,
+                                                                .mosi = PICO_DEFAULT_SPI_TX_PIN,
+                                                                .miso = PICO_DEFAULT_SPI_RX_PIN,
+                                                                .sck = PICO_DEFAULT_SPI_SCK_PIN,
+                                                                .nss = RADIO_NSS},
+                                                        .reset = RADIO_RESET,
+                                                        .dio1 = RADIO_DIO_1};
 
 // ABP settings
 const struct lorawan_abp_settings abp_settings = {.device_address = LORAWAN_DEV_ADDR,
