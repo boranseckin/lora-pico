@@ -92,9 +92,8 @@ void SX126xIoDbgInit(void) {
 
 void SX126xIoTcxoInit(void) {
   CalibrationParams_t calibParam;
-
-  SX126xSetDio3AsTcxoCtrl(TCXO_CTRL_1_7V, SX126xGetBoardTcxoWakeupTime()
-                                              << 6); // convert from ms to SX126x time base
+  // convert from ms to SX126x time base
+  SX126xSetDio3AsTcxoCtrl(TCXO_CTRL_1_7V, SX126xGetBoardTcxoWakeupTime() << 6);
   calibParam.Value = 0x7F;
   SX126xCalibrate(calibParam);
 }
@@ -289,6 +288,8 @@ bool SX126xCheckRfFrequency(uint32_t frequency) {
   // Implement check. Currently all frequencies are supported
   return true;
 }
+
+uint32_t SX126xGetDio1PinState(void) { return GpioRead(&SX126x.DIO1); }
 
 #if defined(USE_RADIO_DEBUG)
 static void SX126xDbgPinTxWrite(uint8_t state) { GpioWrite(&DbgPinTx, state); }
