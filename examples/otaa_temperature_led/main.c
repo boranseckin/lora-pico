@@ -16,11 +16,10 @@
 #include "hardware/gpio.h"
 #include "hardware/spi.h"
 
+#include "pico/board-config.h"
 #include "pico/lorawan.h"
 #include "pico/stdlib.h"
 #include "tusb.h"
-
-#include "board-config.h"
 
 // edit with LoRaWAN Node Region and OTAA settings
 #include "config.h"

@@ -12,11 +12,10 @@
 #include <string.h>
 
 #include "hardware/spi.h"
+#include "pico/board-config.h"
 #include "pico/lorawan.h"
 #include "pico/stdlib.h"
 #include "tusb.h"
-
-#include "board-config.h"
 
 // pin configuration for SX1262 radio module
 const struct lorawan_sx126x_settings sx126x_settings = {.spi = {.inst = spi0,

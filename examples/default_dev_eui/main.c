@@ -15,11 +15,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "pico/board-config.h"
 #include "pico/lorawan.h"
 #include "pico/stdlib.h"
 #include "tusb.h"
 
-#include "board-config.h"
 #include "board.h"
 #include "eeprom-board.h"
 #include "rtc-board.h"
@@ -80,6 +80,16 @@ int main(void) {
       tight_loop_contents();
     }
   }
+
+  SX126xSetStandby(STDBY_RC);
+  SX126xSetPacketType(PACKET_TYPE_LORA);
+  assert(SX126xGetPacketType() == PACKET_TYPE_LORA);
+  // SX126xSetRfFrequency(915000000);
+  // SX126xSetPaConfig(0x04, 0x07, 0x00, 0x01);
+  // SX126xSetTxParams(0x16, 0x02);
+
+  RadioStatus_t status = SX126xGetStatus();
+  printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
 
   printf("BYE\n");
 
