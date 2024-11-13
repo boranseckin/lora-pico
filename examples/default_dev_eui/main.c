@@ -15,10 +15,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "gpio.h"
+#include "hardware/gpio.h"
 #include "pico/board-config.h"
 #include "pico/lorawan.h"
 #include "pico/stdlib.h"
-#include "tusb.h"
 
 #include "board.h"
 #include "eeprom-board.h"
@@ -33,6 +34,15 @@ const struct lorawan_sx126x_settings sx126x_settings = {.spi = {.inst = spi0,
                                                                 .nss = RADIO_NSS},
                                                         .reset = RADIO_RESET,
                                                         .dio1 = RADIO_DIO_1};
+
+static char event_str[128];
+void gpio_event_string(char *buf, uint32_t events);
+
+void gpio_callback(uint gpio, uint32_t events) {
+  // Put the GPIO event(s) that just happened into event_str so we can print it
+  gpio_event_string(event_str, events);
+  printf("GPIO %d %s\n", gpio, event_str);
+}
 
 int main(void) {
   char devEui[17];
@@ -49,6 +59,9 @@ int main(void) {
 
   sleep_ms(2000);
   gpio_put(PICO_DEFAULT_LED_PIN, 1);
+
+  gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true,
+                                     &gpio_callback);
 
   // get the default Dev EUI as a string and print it out
   printf("HELLO\n");
@@ -75,23 +88,24 @@ int main(void) {
   if (reg == 0x14) {
     printf("sanity check passed\n");
   } else {
-    printf("sanity check failed\n");
+    printf("sanity check failed: %d\n", reg);
     while (1) {
       tight_loop_contents();
     }
   }
 
-  SX126xSetStandby(STDBY_RC);
-  SX126xSetPacketType(PACKET_TYPE_LORA);
-  assert(SX126xGetPacketType() == PACKET_TYPE_LORA);
+  // Setup for TX
+  // SX126xSetStandby(STDBY_RC);
+  // SX126xSetPacketType(PACKET_TYPE_LORA);
+  // assert(SX126xGetPacketType() == PACKET_TYPE_LORA);
   // SX126xSetRfFrequency(915000000);
   // SX126xSetPaConfig(0x04, 0x07, 0x00, 0x01);
   // SX126xSetTxParams(0x16, 0x02);
+  //
+  // RadioStatus_t status = SX126xGetStatus();
+  // printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
 
-  RadioStatus_t status = SX126xGetStatus();
-  printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
-
-  printf("BYE\n");
+  // printf("BYE\n");
 
   // do nothing
   while (1) {
@@ -99,4 +113,32 @@ int main(void) {
   }
 
   return 0;
+}
+
+static const char *gpio_irq_str[] = {
+    "LEVEL_LOW",  // 0x1
+    "LEVEL_HIGH", // 0x2
+    "EDGE_FALL",  // 0x4
+    "EDGE_RISE"   // 0x8
+};
+
+void gpio_event_string(char *buf, uint32_t events) {
+  for (uint i = 0; i < 4; i++) {
+    uint mask = (1 << i);
+    if (events & mask) {
+      // Copy this event string into the user string
+      const char *event_str = gpio_irq_str[i];
+      while (*event_str != '\0') {
+        *buf++ = *event_str++;
+      }
+      events &= ~mask;
+
+      // If more events add ", "
+      if (events) {
+        *buf++ = ',';
+        *buf++ = ' ';
+      }
+    }
+  }
+  *buf++ = '\0';
 }
