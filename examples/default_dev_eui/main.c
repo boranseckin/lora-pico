@@ -42,11 +42,23 @@ void gpio_callback(uint gpio, uint32_t events) {
   // Put the GPIO event(s) that just happened into event_str so we can print it
   gpio_event_string(event_str, events);
   printf("GPIO %d %s\n", gpio, event_str);
+  uint8_t buffer_Address = 0; 
+uint8_t payload_length = 0;
+uint8_t data_Buffer[] = {0,0,0,0,0,0,0};
+
+SX126xGetRxBufferStatus(&payload_length,&buffer_Address);
+
+printf("Payload Length: %d\n",payload_length);
+printf("Buffer Address: %d\n",buffer_Address);
+
+SX126xReadBuffer(buffer_Address,data_Buffer,payload_length);
+printf("Data Buffer: %d %d %d %d %d %d %d\n",data_Buffer[0],data_Buffer[1],data_Buffer[2],data_Buffer[3],data_Buffer[4],data_Buffer[5],data_Buffer[6]);
+
 }
 
 int main(void) {
   char devEui[17];
-
+  RadioError_t error;
   // initialize stdio and wait for USB CDC connect
   stdio_init_all();
 
@@ -60,7 +72,7 @@ int main(void) {
   sleep_ms(2000);
   gpio_put(PICO_DEFAULT_LED_PIN, 1);
 
-  gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true,
+  gpio_set_irq_enabled_with_callback(10, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true,
                                      &gpio_callback);
 
   // get the default Dev EUI as a string and print it out
@@ -94,18 +106,64 @@ int main(void) {
     }
   }
 
-  // Setup for TX
-  // SX126xSetStandby(STDBY_RC);
-  // SX126xSetPacketType(PACKET_TYPE_LORA);
+  // Setup for RX
+  printf("Set Standby\n");
+  SX126xClearDeviceErrors();
+
+  error = SX126xGetDeviceErrors();
+  printf("error: %d\n", error);
+  SX126xSetDio3AsTcxoCtrl(0x07,0xFFF);
+  CalibrationParams_t calib_param;
+  calib_param.Value = 0xF;
+  SX126xCalibrate(calib_param);
+  sleep_ms(2000);
+  
+  SX126xSetStandby(STDBY_RC);
+  
+  //RadioStatus_t status = SX126xGetStatus();
+  //printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
+  SX126xSetPacketType(PACKET_TYPE_LORA);
+  
   // assert(SX126xGetPacketType() == PACKET_TYPE_LORA);
-  // SX126xSetRfFrequency(915000000);
+  SX126xSetRfFrequency(915000000);
+  SX126xSetBufferBaseAddress(0x00,0x00); //NOT SURE
+  
+  ModulationParams_t mod_param;
+  mod_param.PacketType = PACKET_TYPE_LORA;
+  mod_param.Params.LoRa.SpreadingFactor = LORA_SF7;
+  mod_param.Params.LoRa.Bandwidth = LORA_BW_250;
+  mod_param.Params.LoRa.CodingRate = LORA_CR_4_5;
+  mod_param.Params.LoRa.LowDatarateOptimize = 0;
+  
+SX126xSetModulationParams(&mod_param);
+
+PacketParams_t packet_param;
+        packet_param.PacketType = PACKET_TYPE_LORA;
+        packet_param.Params.LoRa.PreambleLength = 0xc;
+        packet_param.Params.LoRa.HeaderType = LORA_PACKET_FIXED_LENGTH; //VARIABLE on TX
+        packet_param.Params.LoRa.PayloadLength = 0x6;
+        packet_param.Params.LoRa.CrcMode = LORA_CRC_OFF;
+        packet_param.Params.LoRa.InvertIQ = LORA_IQ_NORMAL;
+
+SX126xSetPacketParams(&packet_param);
+
+SX126xSetDioIrqParams(0x1F7,0x1F7,0x0,0x0);
+
+//SX126xWriteRegister(0x740,0x34);
+
+//SX126xWriteRegister(0x741,0x44);
+
+SX126xSetRx(0xFFFFFF); //Continuous
+RadioStatus_t status = SX126xGetStatus();
+printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
+
+
   // SX126xSetPaConfig(0x04, 0x07, 0x00, 0x01);
   // SX126xSetTxParams(0x16, 0x02);
-  //
-  // RadioStatus_t status = SX126xGetStatus();
-  // printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
+  //RadioStatus_t status = SX126xGetStatus();
+  //printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
 
-  // printf("BYE\n");
+  printf("BYE\n");
 
   // do nothing
   while (1) {
