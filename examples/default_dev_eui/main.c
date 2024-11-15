@@ -39,20 +39,39 @@ static char event_str[128];
 void gpio_event_string(char *buf, uint32_t events);
 
 void gpio_callback(uint gpio, uint32_t events) {
-  // Put the GPIO event(s) that just happened into event_str so we can print it
-  gpio_event_string(event_str, events);
-  printf("GPIO %d %s\n", gpio, event_str);
+
+RadioStatus_t status = SX126xGetStatus();
+printf("%d %d\n", status.Fields.ChipMode, status.Fields.CmdStatus);
+
+RadioError_t error1 = SX126xGetDeviceErrors();
+printf("error: %d\n", error1);
+
+uint16_t prevIRQ = SX126xGetIrqStatus();
+printf("IRQ: %d\n", prevIRQ);
+SX126xClearIrqStatus(prevIRQ);
+
+if(prevIRQ == 2){
   uint8_t buffer_Address = 0; 
-uint8_t payload_length = 0;
-uint8_t data_Buffer[] = {0,0,0,0,0,0,0};
+  uint8_t payload_length = 0;
+  uint8_t data_Buffer[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-SX126xGetRxBufferStatus(&payload_length,&buffer_Address);
+  SX126xGetRxBufferStatus(&payload_length,&buffer_Address);
 
-printf("Payload Length: %d\n",payload_length);
-printf("Buffer Address: %d\n",buffer_Address);
+  printf("Payload Length: %d\n",payload_length);
+  printf("Buffer Address: %d\n",buffer_Address);
 
-SX126xReadBuffer(buffer_Address,data_Buffer,payload_length);
-printf("Data Buffer: %d %d %d %d %d %d %d\n",data_Buffer[0],data_Buffer[1],data_Buffer[2],data_Buffer[3],data_Buffer[4],data_Buffer[5],data_Buffer[6]);
+  SX126xReadBuffer(buffer_Address,data_Buffer,payload_length);
+
+  for(int i = 0; i<35; i++){
+  printf("Data Buffer: %d\n",data_Buffer[i]);
+  }
+}
+
+printf("RSSI: %d\n", SX126xGetRssiInst()); 
+
+
+
+
 
 }
 
@@ -72,7 +91,7 @@ int main(void) {
   sleep_ms(2000);
   gpio_put(PICO_DEFAULT_LED_PIN, 1);
 
-  gpio_set_irq_enabled_with_callback(10, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true,
+  gpio_set_irq_enabled_with_callback(10, GPIO_IRQ_EDGE_RISE, true,
                                      &gpio_callback);
 
   // get the default Dev EUI as a string and print it out
@@ -139,18 +158,17 @@ SX126xSetModulationParams(&mod_param);
 
 PacketParams_t packet_param;
         packet_param.PacketType = PACKET_TYPE_LORA;
-        packet_param.Params.LoRa.PreambleLength = 0xc;
-        packet_param.Params.LoRa.HeaderType = LORA_PACKET_FIXED_LENGTH; //VARIABLE on TX
+        packet_param.Params.LoRa.PreambleLength = 0x10;
+        packet_param.Params.LoRa.HeaderType = LORA_PACKET_EXPLICIT; //VARIABLE on TX
         packet_param.Params.LoRa.PayloadLength = 0x6;
-        packet_param.Params.LoRa.CrcMode = LORA_CRC_OFF;
+        packet_param.Params.LoRa.CrcMode = LORA_CRC_ON;
         packet_param.Params.LoRa.InvertIQ = LORA_IQ_NORMAL;
 
 SX126xSetPacketParams(&packet_param);
 
-SX126xSetDioIrqParams(0x1F7,0x1F7,0x0,0x0);
+SX126xSetDioIrqParams(0xFFFF,0xFFFF,0x0,0x0);
 
 //SX126xWriteRegister(0x740,0x34);
-
 //SX126xWriteRegister(0x741,0x44);
 
 SX126xSetRx(0xFFFFFF); //Continuous
